@@ -21,6 +21,8 @@ import {
     LayoutDashboard,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
     { title: "All Items", icon: LayoutDashboard, url: "/dashboard" },
@@ -31,6 +33,7 @@ const navItems = [
 
 export function AppSidebar() {
     const { isLoaded, isSignedIn, user } = useUser();
+    const pathname = usePathname();
 
     if (!isLoaded || !isSignedIn) {
         return null;
@@ -38,11 +41,9 @@ export function AppSidebar() {
     return (
         <Sidebar collapsible="icon" className="border-r border-border">
             <SidebarHeader className="p-4">
-                {/* We use group here to allow children to react to the sidebar state */}
                 <div className="flex items-center gap-3 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:gap-0">
                     <ShieldCheck className="shrink-0" />
 
-                    {/* This span will now hide completely when the sidebar is collapsed */}
                     <span className="font-semibold group-data-[state=collapsed]:hidden">
                         0Password
                     </span>
@@ -59,11 +60,12 @@ export function AppSidebar() {
                                     <SidebarMenuButton
                                         asChild
                                         tooltip={item.title}
+                                        isActive={pathname === item.url}
                                     >
-                                        <a href={item.url}>
+                                        <Link href={item.url}>
                                             <item.icon />
                                             <span>{item.title}</span>
-                                        </a>
+                                        </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                             ))}
@@ -96,7 +98,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter className="p-4 border-t border-border">
-                <div className="flex items-center gap-3 px-2 py-1 bg-zinc-200 ring-2 ring-zinc-400/40 rounded-lg">
+                <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg bg-zinc-200 hover:bg-zinc-300 transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
                     <UserButton
                         appearance={{
                             elements: {
@@ -116,11 +118,11 @@ export function AppSidebar() {
                     />
                     <div className="flex flex-col group-data-[collapsible=icon]:hidden">
                         <span className="text-xs font-medium truncate max-w-30">
-                            {user.fullName ||
+                            {user.username ||
                                 user.primaryEmailAddress?.emailAddress}
                         </span>
                         <span className="text-[10px] text-zinc-500">
-                            Premium Plan
+                            Free Plan
                         </span>
                     </div>
                 </div>

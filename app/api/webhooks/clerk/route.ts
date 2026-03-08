@@ -24,19 +24,18 @@ export async function POST(req: Request) {
             "svix-timestamp": svix_timestamp!,
             "svix-signature": svix_signature!,
         }) as WebhookEvent;
-    } catch (err) {
-        return new Response("Error occured", { status: 400 });
+    } catch (error) {
+        return new Response(`Error occured : ${error}`, { status: 400 });
     }
 
-    const { id } = evt.data;
     const eventType = evt.type;
 
-    if (eventType === "user.created" || eventType === "user.updated") {
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        );
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
 
+    if (eventType === "user.created" || eventType === "user.updated") {
         const { id, email_addresses, first_name, last_name, image_url } =
             evt.data;
 
@@ -58,10 +57,7 @@ export async function POST(req: Request) {
     }
 
     if (eventType === "user.deleted") {
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        );
+        const { id } = evt.data;
         await supabase.from("users").delete().eq("id", id);
     }
 
