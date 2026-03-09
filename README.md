@@ -1,6 +1,9 @@
 # 0Password
 
-A zero-knowledge, client-side encrypted password manager built with Next.js.
+<img width="2400" height="1260" alt="og-image" src="https://github.com/user-attachments/assets/cc2d8253-c506-43b4-b72e-b9fff27e8ee6" />
+
+A zero-knowledge, client-side encry
+pted password manager built with Next.js.
 
 ## How it works
 
@@ -20,8 +23,8 @@ Your passwords are encrypted in the browser using AES-256-GCM before they ever r
 
 ## Getting Started
 ```bash
-npm install
-npm run dev
+bun install
+bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
