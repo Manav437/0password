@@ -47,10 +47,6 @@
     --radius-4xl: calc(var(--radius) + 16px);
 }
 
-body {
-    /*font-family: Arial, Helvetica, sans-serif;*/
-}
-
 /*---break---*/
 
 :root {

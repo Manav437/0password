@@ -98,7 +98,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter className="p-4 border-t border-border">
-                <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg bg-zinc-200 hover:bg-zinc-300 transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+                <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg bg-zinc-200/70 hover:bg-zinc-300/80 dark:bg-zinc-700/50 dark:hover:bg-zinc-700/80 transition-colors group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:hover:bg-transparent group-data-[collapsible=icon]:dark:bg-transparent group-data-[collapsible=icon]:dark:hover:bg-transparent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0">
                     <UserButton
                         appearance={{
                             elements: {
@@ -121,7 +121,7 @@ export function AppSidebar() {
                             {user.username ||
                                 user.primaryEmailAddress?.emailAddress}
                         </span>
-                        <span className="text-[10px] text-zinc-500">
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
                             Free Plan
                         </span>
                     </div>

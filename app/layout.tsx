@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Inter, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({
     variable: "--font-inter",
@@ -53,12 +54,19 @@ export default function RootLayout({
 }>) {
     return (
         <ClerkProvider>
-            <html lang="en">
+            <html lang="en" suppressHydrationWarning>
                 <body
                     className={`${inter.variable} ${instrumentSerif.variable} antialiased`}
                 >
-                    {children}
-                    <Toaster />
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        {children}
+                        <Toaster />
+                    </ThemeProvider>
                 </body>
             </html>
         </ClerkProvider>

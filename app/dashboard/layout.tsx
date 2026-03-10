@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { cookies } from "next/headers";
 import { VaultWrapper } from "@/components/vault-wrapper";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function DashboardLayout({
     children,
@@ -32,6 +33,9 @@ export default async function DashboardLayout({
                         <h2 className="text-sm font-medium text-muted-foreground">
                             0Password Vault
                         </h2>
+                        <div className="ml-auto">
+                            <ThemeToggle />
+                        </div>
                     </header>
                     <main className="flex-1">{children}</main>
                 </div>
