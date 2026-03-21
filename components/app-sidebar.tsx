@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import {
     Sidebar,
     SidebarContent,
@@ -40,14 +41,23 @@ export function AppSidebar() {
     }
     return (
         <Sidebar collapsible="icon" className="border-r border-border">
-            <SidebarHeader className="p-4">
-                <div className="flex items-center gap-3 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:gap-0">
-                    <ShieldCheck className="shrink-0" />
+            <SidebarHeader className="py-[19.5px] border-b">
+                <Link
+                    href="/"
+                    className="flex items-center gap-2 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:gap-0 rounded-md transition-opacity hover:opacity-70"
+                >
+                    <Image
+                        className="ml-2 group-data-[state=collapsed]:ml-0"
+                        src="/0password-icon.png"
+                        alt="0Password Icon"
+                        width={24}
+                        height={24}
+                    />
 
                     <span className="font-semibold group-data-[state=collapsed]:hidden">
                         0Password
                     </span>
-                </div>
+                </Link>
             </SidebarHeader>
 
             <SidebarContent>

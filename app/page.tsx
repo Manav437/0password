@@ -53,6 +53,7 @@ export default async function Home() {
                 <div className="flex items-center gap-3">
                     {userId ? (
                         <Link
+                            prefetch={false}
                             href="/dashboard"
                             className="group flex h-11 items-center gap-2 [corner-shape:squircle] rounded-[50px] border border-zinc-200 dark:border-zinc-700 bg-[#2c2c2c] dark:bg-white dark:text-zinc-900 px-5 font-mono text-sm text-white transition-all hover:border-zinc-300 dark:hover:border-zinc-600 shadow-[0_1px_0_0_rgba(255,255,255,0.8)_inset,0_-1px_0_0_rgba(0,0,0,0.06)_inset,0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_1px_0_0_rgba(255,255,255,0.9)_inset,0_-1px_0_0_rgba(0,0,0,0.08)_inset,0_4px_10px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.06)]"
                         >

@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, ShieldCheck, Shuffle, Loader2, EyeOff, Eye } from "lucide-react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -158,15 +157,15 @@ export function AddItemDialog() {
                             )}
                         />
 
-                        <div className="flex gap-2 items-end">
-                            <FormField
-                                control={form.control}
-                                name="password"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormLabel>Password</FormLabel>
+                        <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Password</FormLabel>
+                                    <div className="flex gap-2">
                                         <FormControl>
-                                            <div className="relative">
+                                            <div className="relative flex-1">
                                                 <Input
                                                     type={
                                                         showPassword
@@ -193,20 +192,20 @@ export function AddItemDialog() {
                                                 </button>
                                             </div>
                                         </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={generatePassword}
-                                title="Generate Password"
-                            >
-                                <Shuffle className="h-4 w-4 cursor-pointer" />
-                            </Button>
-                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={generatePassword}
+                                            title="Generate Password"
+                                        >
+                                            <Shuffle className="h-4 w-4 cursor-pointer" />
+                                        </Button>
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField
                             control={form.control}

@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Eye, EyeOff, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -22,6 +22,13 @@ export function VaultCard({ item }: { item: VaultItem }) {
     const [decryptedPassword, setDecryptedPassword] = useState<string | null>(
         null,
     );
+    const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+        };
+    }, []);
 
     useEffect(() => {
         async function decryptPassword() {
@@ -65,7 +72,8 @@ export function VaultCard({ item }: { item: VaultItem }) {
         navigator.clipboard.writeText(decryptedPassword);
         setCopied(true);
         toast.success("Password copied to clipboard!");
-        setTimeout(() => setCopied(false), 2000);
+        if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+        copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -79,7 +87,6 @@ export function VaultCard({ item }: { item: VaultItem }) {
                         height={32}
                         className="rounded bg-muted p-1"
                         onError={(e) => (e.currentTarget.src = "/globe.svg")}
-                        unoptimized
                     />
                     <div className="flex flex-col">
                         <h3 className="font-semibold truncate max-w-[120px]">
@@ -136,7 +143,7 @@ export function VaultCard({ item }: { item: VaultItem }) {
             <Button
                 size="sm"
                 variant={copied ? "default" : "secondary"}
-                className="w-full ring-2 ring-black/10 gap-2 cursor-copy hover:ring-black/20"
+                className="w-full ring-2 ring-black/10 dark:ring-white/10 gap-2 cursor-copy hover:ring-black/20 dark:hover:ring-white/20"
                 onClick={copyToClipboard}
                 aria-live="polite"
             >

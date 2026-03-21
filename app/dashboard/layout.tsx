@@ -26,7 +26,7 @@ export default async function DashboardLayout({
                 }
             >
                 <AppSidebar />
-                <div className="flex flex-col flex-1 min-h-screen bg-background">
+                <div className="flex flex-col flex-1 overflow-hidden bg-background">
                     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background/80 backdrop-blur px-4">
                         <SidebarTrigger className="-ml-1" />
                         <div className="h-4 w-px bg-border mx-2" />
@@ -37,7 +37,7 @@ export default async function DashboardLayout({
                             <ThemeToggle />
                         </div>
                     </header>
-                    <main className="flex-1">{children}</main>
+                    <main className="flex-1 overflow-y-auto">{children}</main>
                 </div>
             </SidebarProvider>
         </VaultWrapper>

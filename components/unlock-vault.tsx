@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
-import { deriveKey } from "@/lib/crypto";
+import { deriveKey, encrypt, decrypt } from "@/lib/crypto";
 import { setMasterKey } from "@/lib/masterKey";
+import { getVerificationItem, saveVaultItem } from "@/app/actions/vault";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Lock, Eye, EyeOff } from "lucide-react";
@@ -22,6 +23,30 @@ export function UnlockVault({ onUnlock }: UnlockVaultProps) {
         setError("");
         try {
             const key = await deriveKey(password);
+            
+            const result = await getVerificationItem();
+            if (!result.success) throw new Error("Failed to connect to vault");
+
+            if (result.item) {
+                try {
+                    const validationText = await decrypt(result.item.encrypted_password, result.item.iv, key);
+                    if (validationText !== "0password-verification-success") throw new Error();
+                } catch {
+                    setError("Incorrect Master Password");
+                    setLoading(false);
+                    return;
+                }
+            } else {
+                const { encryptedData, iv } = await encrypt("0password-verification-success", key);
+                await saveVaultItem({
+                    title: "__0PASSWORD_VERIFICATION__",
+                    encryptedPassword: encryptedData,
+                    iv,
+                    login_id: "",
+                    website_url: ""
+                });
+            }
+
             setMasterKey(key);
             onUnlock();
         } catch (e) {
