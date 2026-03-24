@@ -13,17 +13,18 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
-    ShieldCheck,
     KeyRound,
     CreditCard,
     StickyNote,
-    Trash2,
     Settings,
     LayoutDashboard,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { ResetVaultDialog } from "./reset-vault-dialog";
+import { ActiveIndicator } from "./active-indicator";
 
 const navItems = [
     { title: "All Items", icon: LayoutDashboard, url: "/dashboard" },
@@ -65,20 +66,26 @@ export function AppSidebar() {
                     <SidebarGroupLabel>Vault</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {navItems.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton
-                                        asChild
-                                        tooltip={item.title}
-                                        isActive={pathname === item.url}
-                                    >
-                                        <Link href={item.url}>
-                                            <item.icon />
-                                            <span>{item.title}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
+                            {navItems.map((item) => {
+                                const isActive = pathname === item.url;
+                                return (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            tooltip={item.title}
+                                            isActive={isActive}
+                                            className={cn("transition-all rounded-sm duration-300 relative overflow-hidden", {
+                                                "bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 font-medium": isActive
+                                            })}
+                                        >
+                                            <Link href={item.url}>
+                                                <item.icon className={cn("transition-colors", { "text-emerald-500": isActive })} />
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                );
+                            })}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
@@ -94,13 +101,7 @@ export function AppSidebar() {
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    tooltip="Trash"
-                                    className="text-muted-foreground hover:text-destructive"
-                                >
-                                    <Trash2 />
-                                    <span>Trash</span>
-                                </SidebarMenuButton>
+                                <ResetVaultDialog />
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>

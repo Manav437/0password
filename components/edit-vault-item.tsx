@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, ShieldCheck, Shuffle, Loader2, EyeOff, Eye } from "lucide-react";
+import { ShieldCheck, Shuffle, Loader2, EyeOff, Eye, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +25,25 @@ import {
 } from "@/components/ui/form";
 
 import { vaultItemSchema, type VaultItemValues } from "../lib/vault";
-import { saveVaultItem } from "@/app/actions/vault";
+import { updateVaultItem } from "@/app/actions/vault";
 import { encrypt } from "@/lib/crypto";
 import { getMasterKey } from "@/lib/masterKey";
 
-export function AddItemDialog() {
+type VaultItem = {
+    id: string;
+    title: string;
+    login_id: string;
+    encrypted_password: string;
+    iv: string;
+    website_url?: string;
+};
+
+interface EditItemDialogProps {
+    item: VaultItem;
+    decryptedPassword: string | null;
+}
+
+export function EditItemDialog({ item, decryptedPassword }: EditItemDialogProps) {
     const [open, setOpen] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,10 +51,10 @@ export function AddItemDialog() {
     const form = useForm<VaultItemValues>({
         resolver: zodResolver(vaultItemSchema),
         defaultValues: {
-            title: "",
-            url: "",
-            login_id: "",
-            password: "",
+            title: item.title,
+            url: item.website_url || "",
+            login_id: item.login_id,
+            password: decryptedPassword || "",
         },
     });
 
@@ -68,7 +82,7 @@ export function AddItemDialog() {
 
             const { encryptedData, iv } = await encrypt(data.password, key);
 
-            const result = await saveVaultItem({
+            const result = await updateVaultItem(item.id, {
                 title: data.title,
                 login_id: data.login_id,
                 website_url: data.url,
@@ -77,11 +91,10 @@ export function AddItemDialog() {
             });
 
             if (result.success) {
-                toast.success("Record secured in vault.");
-                form.reset();
+                toast.success("Vault record updated.");
                 setOpen(false);
             } else {
-                toast.error("Failed to save: " + result.error);
+                toast.error("Failed to update: " + result.error);
             }
         } catch (error) {
             toast.error("An unexpected error occurred.");
@@ -96,24 +109,26 @@ export function AddItemDialog() {
             open={open}
             onOpenChange={(isOpen) => {
                 setOpen(isOpen);
-                if (!isOpen) form.reset();
+                if (isOpen) {
+                    form.reset({
+                        title: item.title,
+                        url: item.website_url || "",
+                        login_id: item.login_id,
+                        password: decryptedPassword || "",
+                    });
+                }
             }}
         >
             <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 cursor-pointer">
-                    <Plus className="h-4 w-4" />
-                    <span>New Item</span>
+                <Button variant="ghost" size="icon" className="cursor-pointer">
+                    <Edit2 size={16} />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <ShieldCheck className="h-5 w-5 text-primary" />
-                        Add Password
+                    <DialogTitle className="flex items-center">
+                        Edit record
                     </DialogTitle>
-                    <DialogDescription>
-                        Enter the details for your new vault entry.
-                    </DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
@@ -121,7 +136,6 @@ export function AddItemDialog() {
                         onSubmit={form.handleSubmit(onSubmit)}
                         className="space-y-4 pt-4"
                     >
-                        {/* Service Name */}
                         <FormField
                             control={form.control}
                             name="title"
@@ -139,7 +153,6 @@ export function AddItemDialog() {
                             )}
                         />
 
-                        {/* Username */}
                         <FormField
                             control={form.control}
                             name="login_id"
@@ -235,10 +248,10 @@ export function AddItemDialog() {
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
+                                    Updating...
                                 </>
                             ) : (
-                                "Save to Vault"
+                                "Update Vault Entry"
                             )}
                         </Button>
                     </form>

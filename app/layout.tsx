@@ -17,6 +17,11 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+    metadataBase: new URL(
+        process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : "http://localhost:3000"
+    ),
     title: "0password",
     description: "A secure, client-side encrypted password manager",
     icons: {
@@ -24,8 +29,7 @@ export const metadata: Metadata = {
     },
     openGraph: {
         title: "0Password",
-        description:
-            "A zero-knowledge, client-side encrypted password manager.",
+        description: "A zero-knowledge, client-side encrypted password manager.",
         url: "https://0password.vercel.app/",
         siteName: "0Password",
         images: [
@@ -41,8 +45,7 @@ export const metadata: Metadata = {
     twitter: {
         card: "summary_large_image",
         title: "0Password",
-        description:
-            "A zero-knowledge, client-side encrypted password manager.",
+        description: "A zero-knowledge, client-side encrypted password manager.",
         images: ["/og-image.png"],
     },
 };

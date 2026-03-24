@@ -23,7 +23,7 @@ export function UnlockVault({ onUnlock }: UnlockVaultProps) {
         setError("");
         try {
             const key = await deriveKey(password);
-            
+
             const result = await getVerificationItem();
             if (!result.success) throw new Error("Failed to connect to vault");
 
@@ -89,8 +89,7 @@ export function UnlockVault({ onUnlock }: UnlockVaultProps) {
                             onKeyDown={(e) =>
                                 e.key === "Enter" && handleUnlock()
                             }
-                            className="h-12 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 pr-10 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 [corner-shape:squircle] rounded-[50px] focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20"
-                        />
+                            className="h-12 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 pr-10 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 [corner-shape:squircle] rounded-[50px] focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20" />
                         <button
                             type="button"
                             onClick={() => setShow(!show)}
@@ -105,7 +104,7 @@ export function UnlockVault({ onUnlock }: UnlockVaultProps) {
                     </div>
 
                     {error && (
-                        <p className="font-mono text-xs text-red-500">
+                        <p className="text-sm text-center text-red-500">
                             {error}
                         </p>
                     )}

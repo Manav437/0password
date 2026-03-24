@@ -77,3 +77,83 @@ export async function getVerificationItem() {
 
     return { success: true, item: data || null };
 }
+
+export async function deleteVaultItem(id: string) {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    const { error } = await supabase
+        .from("vault_items")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+    if (error) {
+        console.error("Supabase delete error:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/dashboard");
+    return { success: true };
+}
+
+export async function updateVaultItem(id: string, formData: z.infer<typeof schema>) {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const validated = schema.parse(formData);
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    const { error } = await supabase
+        .from("vault_items")
+        .update({
+            title: validated.title,
+            login_id: validated.login_id,
+            encrypted_password: validated.encryptedPassword,
+            iv: validated.iv,
+            website_url: validated.website_url,
+        })
+        .eq("id", id)
+        .eq("user_id", userId);
+
+    if (error) {
+        console.error("Supabase update error:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/dashboard");
+    return { success: true };
+}
+
+export async function resetVault() {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    // Delete all vault items for this user
+    const { error } = await supabase
+        .from("vault_items")
+        .delete()
+        .eq("user_id", userId);
+
+    if (error) {
+        console.error("Supabase reset error:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/dashboard");
+    return { success: true };
+}

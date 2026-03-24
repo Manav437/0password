@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { cookies } from "next/headers";
 import { VaultWrapper } from "@/components/vault-wrapper";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { DashboardHeaderTitle } from "@/components/dashboard-header-title";
 
 export default async function DashboardLayout({
     children,
@@ -30,9 +31,7 @@ export default async function DashboardLayout({
                     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background/80 backdrop-blur px-4">
                         <SidebarTrigger className="-ml-1" />
                         <div className="h-4 w-px bg-border mx-2" />
-                        <h2 className="text-sm font-medium text-muted-foreground">
-                            0Password Vault
-                        </h2>
+                        <DashboardHeaderTitle />
                         <div className="ml-auto">
                             <ThemeToggle />
                         </div>
