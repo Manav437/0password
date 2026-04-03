@@ -2,8 +2,7 @@
 
 <img width="2400" height="1260" alt="og-image" src="https://github.com/user-attachments/assets/cc2d8253-c506-43b4-b72e-b9fff27e8ee6" />
 
-A zero-knowledge, client-side encry
-pted password manager built with Next.js.
+A zero-knowledge, client-side encrypted password manager built with Next.js.
 
 ## How it works
 
@@ -46,4 +45,3 @@ CLERK_WEBHOOK_SECRET=
 - Add, view, and search encrypted credentials
 - Cryptographically secure password generator
 - Favicon-based service icons
-- Collapsible sidebar with search
