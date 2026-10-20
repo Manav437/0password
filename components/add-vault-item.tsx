@@ -27,7 +27,7 @@ import {
 import { vaultItemSchema, type VaultItemValues } from "../lib/vault";
 import { saveVaultItem } from "@/app/actions/vault";
 import { encrypt } from "@/lib/crypto";
-import { getMasterKey } from "@/lib/masterKey";
+import { getMasterKey, getVaultId } from "@/lib/masterKey";
 
 export function AddItemDialog() {
     const [open, setOpen] = useState(false);
@@ -61,12 +61,18 @@ export function AddItemDialog() {
         setIsSubmitting(true);
         try {
             const key = getMasterKey();
-            if (!key) {
+            const vaultId = getVaultId();
+            if (!key || !vaultId) {
                 toast.error("Vault is locked. Please refresh and unlock.");
                 return;
             }
 
             const { encryptedData, iv } = await encrypt(data.password, key);
+
+            if (getMasterKey() !== key || getVaultId() !== vaultId) {
+                toast.error("Vault session changed. Please unlock and try again.");
+                return;
+            }
 
             const result = await saveVaultItem({
                 title: data.title,
@@ -74,11 +80,12 @@ export function AddItemDialog() {
                 website_url: data.url,
                 encryptedPassword: encryptedData,
                 iv,
-            });
+            }, vaultId);
 
             if (result.success) {
                 toast.success("Record secured in vault.");
                 form.reset();
+                setShowPassword(false);
                 setOpen(false);
             } else {
                 toast.error("Failed to save: " + result.error);
@@ -96,6 +103,7 @@ export function AddItemDialog() {
             open={open}
             onOpenChange={(isOpen) => {
                 setOpen(isOpen);
+                setShowPassword(false);
                 if (!isOpen) form.reset();
             }}
         >

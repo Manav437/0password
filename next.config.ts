@@ -1,14 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    images: {
-        remotePatterns: [
-            {
-                protocol: "https",
-                hostname: "www.google.com",
-                pathname: "/s2/favicons/**",
-            },
-        ],
+    experimental: {
+        // Migration data is independently capped at 8 MiB before submission.
+        serverActions: { bodySizeLimit: "10mb" },
     },
 };
 

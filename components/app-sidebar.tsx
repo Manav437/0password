@@ -16,7 +16,7 @@ import {
     KeyRound,
     CreditCard,
     StickyNote,
-    Settings,
+    LockKeyhole,
     LayoutDashboard,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -24,13 +24,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ResetVaultDialog } from "./reset-vault-dialog";
-import { ActiveIndicator } from "./active-indicator";
+import { clearMasterKey } from "@/lib/masterKey";
 
 const navItems = [
-    { title: "All Items", icon: LayoutDashboard, url: "/dashboard" },
-    { title: "Passwords", icon: KeyRound, url: "/dashboard/passwords" },
-    { title: "Payments", icon: CreditCard, url: "/dashboard/payments" },
-    { title: "Secure Notes", icon: StickyNote, url: "/dashboard/notes" },
+    { title: "All Items", icon: LayoutDashboard, url: "/dashboard", comingSoon: false },
+    { title: "Passwords", icon: KeyRound, url: "/dashboard/passwords", comingSoon: false },
+    { title: "Payments", icon: CreditCard, url: "/dashboard/payments", comingSoon: true },
+    { title: "Secure Notes", icon: StickyNote, url: "/dashboard/notes", comingSoon: true },
 ];
 
 export function AppSidebar() {
@@ -68,6 +68,13 @@ export function AppSidebar() {
                         <SidebarMenu>
                             {navItems.map((item) => {
                                 const isActive = pathname === item.url;
+                                if (item.comingSoon) return (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton disabled tooltip={`${item.title} — coming soon`}>
+                                            <item.icon /><span>{item.title} (soon)</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                );
                                 return (
                                     <SidebarMenuItem key={item.title}>
                                         <SidebarMenuButton
@@ -95,9 +102,9 @@ export function AppSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton tooltip="Settings">
-                                    <Settings />
-                                    <span>Settings</span>
+                                <SidebarMenuButton tooltip="Lock vault" onClick={clearMasterKey}>
+                                    <LockKeyhole />
+                                    <span>Lock vault</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             <SidebarMenuItem>

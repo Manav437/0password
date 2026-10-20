@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Inter, Instrument_Serif } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { VaultSessionProvider } from "@/components/vault-session-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -22,14 +23,14 @@ export const metadata: Metadata = {
             ? `https://${process.env.VERCEL_URL}`
             : "http://localhost:3000"
     ),
-    title: "0password",
+    title: "0Password",
     description: "A secure, client-side encrypted password manager",
     icons: {
         icon: "/0password-icon.png",
     },
     openGraph: {
         title: "0Password",
-        description: "A zero-knowledge, client-side encrypted password manager.",
+        description: "A password manager with client-side password encryption.",
         url: "https://0password.vercel.app/",
         siteName: "0Password",
         images: [
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
                 url: "/og-image.png",
                 width: 1200,
                 height: 630,
-                alt: "0Password — Zero-knowledge password manager",
+                alt: "0Password — Client-side password encryption",
             },
         ],
         type: "website",
@@ -45,7 +46,7 @@ export const metadata: Metadata = {
     twitter: {
         card: "summary_large_image",
         title: "0Password",
-        description: "A zero-knowledge, client-side encrypted password manager.",
+        description: "A password manager with client-side password encryption.",
         images: ["/og-image.png"],
     },
 };
@@ -67,7 +68,7 @@ export default function RootLayout({
                         enableSystem
                         disableTransitionOnChange
                     >
-                        {children}
+                        <VaultSessionProvider>{children}</VaultSessionProvider>
                         <Toaster />
                     </ThemeProvider>
                 </body>

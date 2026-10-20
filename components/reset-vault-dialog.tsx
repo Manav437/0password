@@ -1,88 +1,116 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
-import { resetVault } from "@/app/actions/vault";
+import { getVaultRevision, resetVault } from "@/app/actions/vault";
+import { clearMasterKey } from "@/lib/masterKey";
+import { RESET_CONFIRMATION } from "@/lib/vault-protocol";
 import { toast } from "sonner";
 import { SidebarMenuButton } from "@/components/ui/sidebar";
 
-export function ResetVaultDialog() {
+export function ResetVaultDialog({ locked = false, disabled = false }: { locked?: boolean; disabled?: boolean }) {
+    const { userId } = useAuth();
     const [open, setOpen] = useState(false);
+    const [confirmation, setConfirmation] = useState("");
     const [loading, setLoading] = useState(false);
+    const [revision, setRevision] = useState<string | null>(null);
+    const [checking, setChecking] = useState(false);
+    const [checkError, setCheckError] = useState("");
+    const revisionRequest = useRef(0);
+    const inFlight = useRef(false);
+    const inputId = useId();
 
-    const handleReset = async () => {
+    useEffect(() => () => { revisionRequest.current += 1; }, []);
+
+    function changeOpen(next: boolean) {
+        if (loading || inFlight.current) return;
+        const request = ++revisionRequest.current;
+        setOpen(next);
+        setConfirmation("");
+        setRevision(null);
+        setCheckError("");
+        setChecking(next);
+        if (!next || !userId) return;
+        getVaultRevision(userId).then((result) => {
+            if (request !== revisionRequest.current) return;
+            if (result.success) setRevision(result.revision);
+            else setCheckError(result.error);
+        }).catch(() => {
+            if (request === revisionRequest.current) setCheckError("Unable to check your vault. Close this dialog and try again.");
+        }).finally(() => {
+            if (request === revisionRequest.current) setChecking(false);
+        });
+    }
+
+    async function handleReset(event: React.FormEvent) {
+        event.preventDefault();
+        if (!userId || !revision || checking || confirmation !== RESET_CONFIRMATION || inFlight.current) return;
+        inFlight.current = true;
         setLoading(true);
         try {
-            const result = await resetVault();
-            if (result.success) {
-                toast.success("Vault has been reset.");
-                setOpen(false);
-                window.location.href = "/dashboard";
-            } else {
-                toast.error("Failed to reset vault: " + result.error);
+            const result = await resetVault(confirmation, userId, revision);
+            if (!result.success) { toast.error(result.error); return; }
+            clearMasterKey();
+            if (typeof BroadcastChannel !== "undefined") {
+                const channel = new BroadcastChannel("0password-vault-reset");
+                channel.postMessage({ userId });
+                channel.close();
             }
-        } catch (error) {
-            toast.error("An unexpected error occurred.");
+            toast.success("Vault deleted. You can now create a new master password.");
+            window.location.replace("/dashboard");
+        } catch {
+            toast.error("Unable to reset your vault. Please try again.");
         } finally {
+            inFlight.current = false;
             setLoading(false);
         }
-    };
+    }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={changeOpen}>
             <DialogTrigger asChild>
-                <SidebarMenuButton
-                    tooltip="Reset Vault"
-                    className="text-muted-foreground hover:text-destructive cursor-pointer"
-                >
-                    <Trash2 />
-                    <span>Reset Vault</span>
-                </SidebarMenuButton>
+                {locked ? <Button variant="link" disabled={disabled}>Forgot master password?</Button> :
+                    <SidebarMenuButton tooltip="Reset vault" disabled={disabled} className="text-muted-foreground hover:text-destructive cursor-pointer">
+                        <Trash2 /><span>Reset vault</span>
+                    </SidebarMenuButton>}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+
+            <DialogContent className="sm:max-w-[425px]" showCloseButton={!loading}
+                onEscapeKeyDown={(event) => { if (loading) event.preventDefault(); }}
+                onInteractOutside={(event) => { if (loading) event.preventDefault(); }}>
+
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-5 w-5" />
-                        Critical Action
+                        Permanently reset vault?
                     </DialogTitle>
-                    <DialogDescription className="pt-2 text-zinc-600 dark:text-zinc-400">
-                        This will <span className="font-bold text-destructive">PERMANENTLY DELETE</span> all records, passwords, and data in your vault.
-                        This action cannot be undone.
+                    <DialogDescription>
+                        Your master password cannot be recovered. Resetting permanently deletes every credential
+                        in your vault so you can create a new one. This cannot be undone and does not reset your
+                        account sign-in password.
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter className="mt-4 gap-2">
-                    <Button
-                        variant="ghost"
-                        onClick={() => setOpen(false)}
-                        disabled={loading}
-                        className="cursor-pointer"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        onClick={handleReset}
-                        disabled={loading}
-                        className="cursor-pointer gap-2"
-                    >
-                        {loading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <Trash2 className="h-4 w-4" />
-                        )}
-                        Reset Everything
-                    </Button>
-                </DialogFooter>
+                {checking && <p role="status" className="text-sm text-muted-foreground">Checking vault state…</p>}
+                {checkError && <p role="alert" className="text-sm text-destructive">{checkError}</p>}
+                <form onSubmit={handleReset} className="space-y-4">
+                    <div className="space-y-2">
+                        <label htmlFor={inputId} className="text-sm font-medium">Type {RESET_CONFIRMATION} to confirm deletion</label>
+                        <Input className="mt-2" id={inputId} value={confirmation} onChange={(event) => setConfirmation(event.target.value)}
+                            autoComplete="off" spellCheck={false} disabled={loading} />
+                    </div>
+                    <DialogFooter>
+                        <Button className="cursor-pointer" type="button" variant="ghost" onClick={() => changeOpen(false)} disabled={loading}>Cancel</Button>
+                        <Button type="submit" variant="destructive" disabled={loading || checking || !revision || confirmation !== RESET_CONFIRMATION || !userId} className="cursor-pointer gap-2">
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Delete vault permanently
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );

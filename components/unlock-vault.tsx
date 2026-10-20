@@ -1,137 +1,130 @@
 "use client";
-import { useState } from "react";
-import { deriveKey, encrypt, decrypt } from "@/lib/crypto";
-import { setMasterKey } from "@/lib/masterKey";
-import { getVerificationItem, saveVaultItem } from "@/app/actions/vault";
+
+import { useEffect, useRef, useState } from "react";
+import { UserButton } from "@clerk/nextjs";
+import { Eye, EyeOff, Lock } from "lucide-react";
+import { getVaultState, initializeVault } from "@/app/actions/vault";
+import { getVaultGeneration, setMasterKey } from "@/lib/masterKey";
+import { unlockVault } from "@/lib/unlock";
+import type { VaultState } from "@/lib/vault-protocol";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, Lock, Eye, EyeOff } from "lucide-react";
+import { ResetVaultDialog } from "./reset-vault-dialog";
 
-interface UnlockVaultProps {
-    onUnlock: () => void;
-}
-
-export function UnlockVault({ onUnlock }: UnlockVaultProps) {
+export function UnlockVault({ userId }: { userId: string }) {
+    const [state, setState] = useState<VaultState | null>(null);
+    const [loadError, setLoadError] = useState("");
+    const [reload, setReload] = useState(0);
     const [password, setPassword] = useState("");
+    const [confirmation, setConfirmation] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [show, setShow] = useState(false);
+    const inFlight = useRef(false);
+    const attempt = useRef(0);
 
-    async function handleUnlock() {
-        if (!password) return;
+    useEffect(() => {
+        let active = true;
+        getVaultState(userId).then((result) => {
+            if (!active) return;
+            if (result.success) setState(result.state);
+            else setLoadError(result.error);
+        }).catch(() => { if (active) setLoadError("Unable to load your vault. Please try again."); });
+        return () => { active = false; attempt.current += 1; };
+    }, [userId, reload]);
+
+    const creating = state?.kind === "new";
+    async function handleUnlock(event: React.FormEvent) {
+        event.preventDefault();
+        if (!state || !password || inFlight.current) return;
+        if (creating && password !== confirmation) { setError("Master passwords do not match."); return; }
+        if (creating && password.length < 12) { setError("Use at least 12 characters for your master password."); return; }
+        inFlight.current = true;
+        const currentAttempt = ++attempt.current;
+        const generation = getVaultGeneration();
         setLoading(true);
         setError("");
         try {
-            const key = await deriveKey(password);
-
-            const result = await getVerificationItem();
-            if (!result.success) throw new Error("Failed to connect to vault");
-
-            if (result.item) {
-                try {
-                    const validationText = await decrypt(result.item.encrypted_password, result.item.iv, key);
-                    if (validationText !== "0password-verification-success") throw new Error();
-                } catch {
-                    setError("Incorrect Master Password");
-                    setLoading(false);
-                    return;
-                }
-            } else {
-                const { encryptedData, iv } = await encrypt("0password-verification-success", key);
-                await saveVaultItem({
-                    title: "__0PASSWORD_VERIFICATION__",
-                    encryptedPassword: encryptedData,
-                    iv,
-                    login_id: "",
-                    website_url: ""
-                });
+            const latest = await getVaultState(userId);
+            if (currentAttempt !== attempt.current || generation !== getVaultGeneration()) return;
+            if (!latest.success) throw new Error(latest.error);
+            if (latest.state.kind !== state.kind || (latest.state.kind === "ready" && state.kind === "ready" && latest.state.metadata.vault_id !== state.metadata.vault_id)) {
+                setState(latest.state);
+                setPassword("");
+                setConfirmation("");
+                setShow(false);
+                throw new Error("Your vault changed in another session. Please review it and try again.");
             }
-
-            setMasterKey(key);
-            onUnlock();
-        } catch (e) {
-            setError("Failed to unlock vault");
+            const result = await unlockVault(password, latest.state, async (initialization) => {
+                if (currentAttempt !== attempt.current || generation !== getVaultGeneration()) {
+                    throw new Error("Your session changed. Please try again.");
+                }
+                const saved = await initializeVault(initialization, userId);
+                if (!saved.success) throw new Error(saved.error);
+                return saved.vaultId;
+            });
+            if (currentAttempt !== attempt.current) return;
+            setPassword("");
+            setConfirmation("");
+            setShow(false);
+            if (!setMasterKey(result.key, userId, result.vaultId, generation)) {
+                setError("Your session changed. Please try again.");
+            }
+        } catch (failure) {
+            if (currentAttempt === attempt.current) setError(failure instanceof Error ? failure.message : "Failed to unlock vault.");
         } finally {
-            setLoading(false);
+            inFlight.current = false;
+            if (currentAttempt === attempt.current) setLoading(false);
         }
     }
 
     return (
         <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
-            <div className="pointer-events-none absolute inset-0 dark:hidden bg-[linear-gradient(rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            <div className="absolute right-6 top-6"><UserButton /></div>
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(128,128,128,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(128,128,128,0.06)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
-            <div className="pointer-events-none absolute inset-0 hidden dark:block bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
-
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-800/10 blur-[120px]" />
-
-            <div className="relative z-10 w-full max-w-sm px-4">
-                <div className="mb-8 flex flex-col items-center gap-4">
-                    <div className="group flex h-16 w-16 items-center justify-center rounded-2xl ring-2 ring-zinc-600/20 dark:ring-zinc-400/20 bg-white shadow-sm hover:shadow-lg duration-300">
-                        <Lock className="h-7 w-7 text-zinc-500 dark:text-zinc-400 transition-transform duration-500 group-hover:rotate-y-180" />
-                    </div>
-                    <div className="text-center">
-                        <h1 className="font-serif tracking-wide text-4xl font-semibold text-zinc-900 dark:text-zinc-100">
-                            Vault Locked
-                        </h1>
-                        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                            Enter your master password to decrypt your vault
-                        </p>
-                    </div>
+            <div className="relative z-10 w-full max-w-sm px-4 py-12">
+                <div className="mb-8 flex flex-col items-center gap-4 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted ring-2 ring-border"><Lock className="h-7 w-7 text-muted-foreground" /></div>
+                    <h1 className="font-serif text-4xl">{creating ? "Create your vault" : "Vault locked"}</h1>
+                    <p className="text-sm text-muted-foreground">
+                        {creating ? "Choose a strong master password. It cannot be recovered if you forget it." : "Enter your master password to decrypt your vault."}
+                    </p>
                 </div>
-
-                <div className="space-y-3">
-                    <div className="relative">
-                        <Input
-                            type={show ? "text" : "password"}
-                            placeholder="Master password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            onKeyDown={(e) =>
-                                e.key === "Enter" && handleUnlock()
-                            }
-                            className="h-12 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 pr-10 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 [corner-shape:squircle] rounded-[50px] focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20" />
-                        <button
-                            type="button"
-                            onClick={() => setShow(!show)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                        >
-                            {show ? (
-                                <EyeOff className="h-4 w-4" />
-                            ) : (
-                                <Eye className="h-4 w-4" />
-                            )}
-                        </button>
+                {!state && !loadError && <p role="status" className="text-center text-sm">Loading vault…</p>}
+                {loadError && <div className="space-y-3 text-center">
+                    <p role="alert" className="text-sm text-destructive">{loadError}</p>
+                    <Button variant="outline" onClick={() => { setLoadError(""); setState(null); setReload((value) => value + 1); }}>Try again</Button>
+                </div>}
+                {state && <form onSubmit={handleUnlock} className="space-y-4">
+                    <div className="space-y-2">
+                        <label htmlFor="master-password" className="text-sm font-medium">Master password</label>
+                        <div className="relative mt-1">
+                            <Input id="master-password" type={show ? "text" : "password"} autoComplete={creating ? "new-password" : "current-password"}
+                                value={password} onChange={(event) => setPassword(event.target.value)} disabled={loading} required
+                                minLength={creating ? 12 : undefined} className="h-12 pr-12" autoFocus />
+                            <button type="button" aria-label={show ? "Hide master password" : "Show master password"}
+                                onClick={() => setShow((value) => !value)} className="absolute right-4 top-4 text-muted-foreground">
+                                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                        </div>
                     </div>
 
-                    {error && (
-                        <p className="text-sm text-center text-red-500">
-                            {error}
-                        </p>
-                    )}
-
-                    <Button
-                        onClick={handleUnlock}
-                        disabled={loading || !password}
-                        className="font-sans cursor-pointer h-12 w-full [corner-shape:squircle] rounded-[50px] border border-emerald-600/30 text-emerald-50 text-sm bg-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:hover:bg-emerald-900 dark:hover:text-emerald-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-emerald-700 disabled:hover:text-emerald-50"
-                        variant="ghost"
-                    >
-                        {loading ? (
-                            <span className="flex items-center gap-2">
-                                <span className="h-3 w-3 rounded-full border border-emerald-600/30 border-t-emerald-600 animate-spin" />
-                                Deriving key...
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4" />
-                                Unlock Vault
-                            </span>
-                        )}
+                    {creating && <div className="space-y-2">
+                        <label htmlFor="confirm-master-password" className="text-sm font-medium">Confirm master password</label>
+                        <Input id="confirm-master-password" type="password" autoComplete="new-password" value={confirmation}
+                            onChange={(event) => setConfirmation(event.target.value)} disabled={loading} required minLength={12} className="mt-1 h-12" />
+                    </div>}
+                    {state.kind === "legacy" && <p className="text-sm text-muted-foreground">After verifying your password, we’ll securely upgrade your vault encryption in this browser. No entries will be changed unless the complete upgrade succeeds.</p>}
+                    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+                    <Button type="submit" disabled={loading || !password || (creating && !confirmation)} className="cursor-pointer h-12 w-full gap-2">
+                        {/*<ShieldCheck className="h-4 w-4" />*/}
+                        {loading ? "Securing vault…" : creating ? "Create vault" : "Unlock vault"}
                     </Button>
-                </div>
+                </form>}
 
-                <p className="mt-8 text-center font-serif text-sm text-zinc-600 dark:text-zinc-400 tracking-widest uppercase">
-                    Zero-knowledge {" · "} Client-side decryption
-                </p>
+                {!creating && <div className="mt-4 text-center"><ResetVaultDialog locked disabled={loading} /></div>}
+                <p className="mt-8 text-center text-xs text-muted-foreground">Passwords are encrypted on your device. Service names, usernames, and URLs are not encrypted.</p>
             </div>
         </div>
     );

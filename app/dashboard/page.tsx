@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { normalizeVaultSearchQuery } from "@/lib/vault-search";
+import { storedCredentialSchema } from "@/lib/vault-protocol";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
@@ -13,30 +17,28 @@ export default async function DashboardPage({
     searchParams: Promise<{ query?: string }>;
 }) {
     const { userId } = await auth();
-    const query = (await searchParams).query;
+    if (!userId) redirect("/sign-in");
+
+    const query = normalizeVaultSearchQuery((await searchParams).query);
 
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
-    let dbQuery = supabase
-        .from("vault_items")
-        .select("*")
-        .eq("user_id", userId)
-        .neq("title", "__0PASSWORD_VERIFICATION__");
-
-    if (query) {
-        dbQuery = dbQuery.or(
-            `title.ilike.%${query}%,login_id.ilike.%${query}%`,
-        );
-    }
-
-    const { data: vaultItems } = await dbQuery.order("created_at", {
-        ascending: false,
+    const { data, error } = await supabase.rpc("search_vault_items", {
+        p_user_id: userId,
+        p_query: query,
     });
 
-    const isEmpty = !vaultItems || vaultItems.length === 0;
+    if (error) {
+        throw new Error("Unable to load your vault. Please try again.");
+    }
+
+    const parsed = z.array(storedCredentialSchema).safeParse(data);
+    if (!parsed.success) throw new Error("The vault returned invalid data. Please try again.");
+    const vaultItems = parsed.data;
+    const isEmpty = vaultItems.length === 0;
 
     return (
         <div className="p-6 space-y-8">

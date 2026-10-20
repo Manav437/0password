@@ -1,78 +1,53 @@
-"use client";
+export const LEGACY_KDF_ITERATIONS = 100_000;
 
-const PBKDF2_ITERATIONS = 100000;
+export function toBase64(bytes: Uint8Array): string {
+    return btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(""));
+}
 
-// Turns master password string → usable CryptoKey
-export async function deriveKey(masterPassword: string): Promise<CryptoKey> {
-    // 1. import masterPassword as raw key material
-    // 2. use deriveKey with PBKDF2, SHA-256, 100k iterations
-    // 3. output AES-GCM 256-bit key
-    const encoder = new TextEncoder();
-    const keyMaterial = await window.crypto.subtle.importKey(
-        "raw",
-        encoder.encode(masterPassword),
-        "PBKDF2",
-        false,
-        ["deriveKey"],
+function fromBase64(value: string): Uint8Array<ArrayBuffer> {
+    return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
+}
+
+export function generateSalt(): string {
+    return toBase64(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+async function derive(masterPassword: string, salt: Uint8Array<ArrayBuffer>, iterations: number): Promise<CryptoKey> {
+    const material = await crypto.subtle.importKey(
+        "raw", new TextEncoder().encode(masterPassword), "PBKDF2", false, ["deriveKey"],
     );
-
-    const salt = encoder.encode("0password-salt");
-    return await window.crypto.subtle.deriveKey(
-        {
-            name: "PBKDF2",
-            salt,
-            iterations: PBKDF2_ITERATIONS,
-            hash: "SHA-256",
-        },
-        keyMaterial,
+    return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
+        material,
         { name: "AES-GCM", length: 256 },
-        true,
+        false,
         ["encrypt", "decrypt"],
     );
 }
 
-// Encrypts plaintext → { encryptedData, iv } both base64
-export async function encrypt(
-    text: string,
-    key: CryptoKey,
-): Promise<{ encryptedData: string; iv: string }> {
-    // 1. generate random 12-byte IV
-    // 2. encrypt with AES-GCM
-    // 3. convert both to base64 and return
-    const encoder = new TextEncoder();
-    const encodedText = encoder.encode(text);
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-
-    const encrypted = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        key,
-        encodedText,
-    );
-
-    const toBase64 = (buffer: ArrayBuffer | Uint8Array) =>
-        btoa(String.fromCharCode(...new Uint8Array(buffer)));
-
-    return {
-        encryptedData: toBase64(encrypted),
-        iv: toBase64(iv),
-    };
+export function deriveKey(masterPassword: string, parameters: { salt: string; iterations: number }): Promise<CryptoKey> {
+    if (fromBase64(parameters.salt).length !== 16 || parameters.iterations !== 600_000) {
+        throw new Error("Unsupported vault key parameters.");
+    }
+    return derive(masterPassword, fromBase64(parameters.salt), parameters.iterations);
 }
 
-// Decrypts encryptedData + iv → plaintext string
-export async function decrypt(
-    encryptedData: string,
-    iv: string,
-    key: CryptoKey,
-): Promise<string> {
-    // reverse of encrypt
-    const fromBase64 = (base64: string) =>
-        Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+// Only used to read old vaults before an atomic, client-side re-encryption.
+export function deriveLegacyKey(masterPassword: string): Promise<CryptoKey> {
+    return derive(masterPassword, new TextEncoder().encode("0password-salt"), LEGACY_KDF_ITERATIONS);
+}
 
-    const decrypted = await window.crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: fromBase64(iv) },
-        key,
-        fromBase64(encryptedData),
+export async function encrypt(text: string, key: CryptoKey): Promise<{ encryptedData: string; iv: string }> {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv }, key, new TextEncoder().encode(text),
     );
+    return { encryptedData: toBase64(new Uint8Array(encrypted)), iv: toBase64(iv) };
+}
 
+export async function decrypt(encryptedData: string, iv: string, key: CryptoKey): Promise<string> {
+    const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: fromBase64(iv) }, key, fromBase64(encryptedData),
+    );
     return new TextDecoder().decode(decrypted);
 }

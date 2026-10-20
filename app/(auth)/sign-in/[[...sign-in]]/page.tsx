@@ -14,21 +14,25 @@ export default function Page() {
             <div className="pointer-events-none absolute inset-0 dark:hidden bg-[linear-gradient(rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
             <div className="pointer-events-none absolute inset-0 hidden dark:block bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
             <div className="pointer-events-none absolute left-1/2 top-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-100/10 dark:bg-emerald-900/15 blur-[120px]" />
-            <div className="relative z-10 mb-8 flex flex-col items-center">
+
+            <div className="relative z-10 mb-8 flex flex-row gap-6 items-center">
                 <Link href="/">
                     <Image
                         src="/0password-icon.png"
                         alt="0Password"
-                        width={32}
-                        height={32}
+                        width={56}
+                        height={56}
                     />
                 </Link>
-                <h1 className="text-3xl font-bold text-zinc-800 dark:text-zinc-100 tracking-tight">
-                    0Password
-                </h1>
-                <span className="text-zinc-500 dark:text-zinc-400">
-                    Log in to your 0Password account
-                </span>
+                <div className="flex flex-col gap-px">
+                    <h1 className="text-3xl font-semibold text-zinc-800 dark:text-zinc-100 tracking-tight">
+                        0Password
+                    </h1>
+                    {/*<div className="w-full h-px bg-zinc-100"></div>*/}
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                        Log in to your account
+                    </span>
+                </div>
             </div>
             <SignIn
                 forceRedirectUrl="/dashboard"

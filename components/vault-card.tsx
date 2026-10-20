@@ -1,12 +1,13 @@
 "use client";
-import Image from "next/image";
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Copy, Eye, EyeOff, Check, ExternalLink, Trash2, User } from "lucide-react";
+import { Copy, Eye, EyeOff, Check, ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { decrypt } from "@/lib/crypto";
-import { getMasterKey } from "@/lib/masterKey";
+import { getMasterKey, getVaultId } from "@/lib/masterKey";
+import { getSafeWebsiteUrl } from "@/lib/vault";
 import { deleteVaultItem } from "@/app/actions/vault";
 import { EditItemDialog } from "./edit-vault-item";
 
@@ -25,9 +26,25 @@ export function VaultCard({ item }: { item: VaultItem }) {
     const [copiedUser, setCopiedUser] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
-    const [decryptedPassword, setDecryptedPassword] = useState<string | null>(
-        null,
-    );
+    const key = getMasterKey();
+    const vaultId = getVaultId();
+    const [decryption, setDecryption] = useState<{
+        itemId: string;
+        ciphertext: string;
+        iv: string;
+        key: CryptoKey;
+        vaultId: string;
+        plaintext: string | null;
+        error: string | null;
+    } | null>(null);
+    const isCurrentDecryption = decryption !== null &&
+        decryption.itemId === item.id &&
+        decryption.ciphertext === item.encrypted_password &&
+        decryption.iv === item.iv &&
+        decryption.key === key && decryption.vaultId === vaultId;
+    const decryptedPassword = isCurrentDecryption ? decryption.plaintext : null;
+    const decryptionError = isCurrentDecryption ? decryption.error : null;
+    const websiteUrl = getSafeWebsiteUrl(item.website_url);
     const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const userCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -40,61 +57,66 @@ export function VaultCard({ item }: { item: VaultItem }) {
     }, []);
 
     useEffect(() => {
+        let cancelled = false;
         async function decryptPassword() {
+            if (!key || !vaultId) return;
+            const source = {
+                itemId: item.id,
+                ciphertext: item.encrypted_password,
+                iv: item.iv,
+                key,
+                vaultId,
+            };
+            let plaintext: string | null = null;
+            let error: string | null = null;
             try {
-                const key = getMasterKey();
-                if (!key) return;
-                const plaintext = await decrypt(
-                    item.encrypted_password,
-                    item.iv,
-                    key,
-                );
-                setDecryptedPassword(plaintext);
+                plaintext = await decrypt(item.encrypted_password, item.iv, key);
             } catch {
-                setDecryptedPassword("[decryption failed]");
+                error = "Unable to decrypt this password.";
             }
+            if (cancelled || getMasterKey() !== key || getVaultId() !== vaultId) return;
+            setShowPassword(false);
+            setCopied(false);
+            setDecryption({ ...source, plaintext, error });
         }
-        decryptPassword();
-    }, [item.encrypted_password, item.iv]);
+        void decryptPassword();
+        return () => { cancelled = true; };
+    }, [item.id, item.encrypted_password, item.iv, key, vaultId]);
 
-    const getIconDomain = () => {
-        if (item.website_url && item.website_url.trim() !== "") {
-            try {
-                return new URL(
-                    item.website_url.startsWith("http")
-                        ? item.website_url
-                        : `https://${item.website_url}`,
-                ).hostname;
-            } catch {
-                return item.website_url;
-            }
+    const copyToClipboard = async () => {
+        if (decryptedPassword === null || !key || !vaultId ||
+            getMasterKey() !== key || getVaultId() !== vaultId) return;
+        try {
+            await navigator.clipboard.writeText(decryptedPassword);
+            setCopied(true);
+            toast.success("Password copied to clipboard!");
+            if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+            copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+        } catch {
+            toast.error("Failed to copy password to clipboard.");
         }
-
-        return `${item.title.toLowerCase().replace(/\s+/g, "")}.com`;
     };
 
-    const iconDomain = getIconDomain();
-    const faviconUrl = `https://www.google.com/s2/favicons?domain=${iconDomain}&sz=64`;
-
-    const copyToClipboard = () => {
-        if (!decryptedPassword) return;
-        navigator.clipboard.writeText(decryptedPassword);
-        setCopied(true);
-        toast.success("Password copied to clipboard!");
-        if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-        copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
-    };
-
-    const copyUserToClipboard = () => {
+    const copyUserToClipboard = async () => {
         if (!item.login_id) return;
-        navigator.clipboard.writeText(item.login_id);
-        setCopiedUser(true);
-        toast.success("Username copied to clipboard!");
-        if (userCopyTimerRef.current) clearTimeout(userCopyTimerRef.current);
-        userCopyTimerRef.current = setTimeout(() => setCopiedUser(false), 2000);
+        try {
+            await navigator.clipboard.writeText(item.login_id);
+            setCopiedUser(true);
+            toast.success("Username copied to clipboard!");
+            if (userCopyTimerRef.current) clearTimeout(userCopyTimerRef.current);
+            userCopyTimerRef.current = setTimeout(() => setCopiedUser(false), 2000);
+        } catch {
+            toast.error("Failed to copy username to clipboard.");
+        }
     };
 
     const handleDelete = async () => {
+        const currentKey = getMasterKey();
+        const currentVaultId = getVaultId();
+        if (!currentKey || !currentVaultId || currentKey !== key || currentVaultId !== vaultId) {
+            toast.error("Vault is locked or the session changed. Please unlock again.");
+            return;
+        }
         if (!confirmDelete) {
             setConfirmDelete(true);
             setTimeout(() => setConfirmDelete(false), 3000);
@@ -103,14 +125,14 @@ export function VaultCard({ item }: { item: VaultItem }) {
 
         setIsDeleting(true);
         try {
-            const result = await deleteVaultItem(item.id);
+            const result = await deleteVaultItem(item.id, currentVaultId);
             if (result.success) {
                 toast.success("Item removed from vault");
             } else {
                 toast.error("Failed to delete: " + result.error);
                 setIsDeleting(false);
             }
-        } catch (error) {
+        } catch {
             toast.error("An error occurred while deleting");
             setIsDeleting(false);
         }
@@ -120,27 +142,25 @@ export function VaultCard({ item }: { item: VaultItem }) {
         <div className="p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-all group relative">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                    <Image
-                        src={faviconUrl}
-                        alt={`${item.title} logo`}
-                        width={32}
-                        height={32}
-                        className="rounded bg-muted p-1"
-                        onError={(e) => (e.currentTarget.src = "/globe.svg")}
-                    />
+                    <div
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted text-sm font-semibold"
+                        aria-hidden="true"
+                    >
+                        {item.title.trim().slice(0, 2).toUpperCase() || "?"}
+                    </div>
                     <div className="flex flex-col">
                         <h3 className="font-semibold truncate max-w-[120px]">
                             {item.title}
                         </h3>
-                        {item.website_url && (
+                        {websiteUrl && (
                             <a
-                                href={item.website_url}
+                                href={websiteUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
                                 aria-label={`Visit ${item.title} website`}
                             >
-                                {item.website_url.replace(/^https?:\/\//, "")}
+                                {websiteUrl.replace(/^https?:\/\//, "")}
                                 <ExternalLink size={10} />
                             </a>
                         )}
@@ -151,7 +171,12 @@ export function VaultCard({ item }: { item: VaultItem }) {
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => {
+                            if (getMasterKey() === key && getVaultId() === vaultId) {
+                                setShowPassword(!showPassword);
+                            }
+                        }}
+                        disabled={decryptedPassword === null}
                         aria-label={
                             showPassword ? "Hide password" : "Show password"
                         }
@@ -215,9 +240,9 @@ export function VaultCard({ item }: { item: VaultItem }) {
                 </p>
                 <div className="relative">
                     <p className="text-sm font-sans bg-muted/50 p-2 rounded break-all min-h-[36px] flex items-center">
-                        {showPassword
-                            ? (decryptedPassword ?? "••••••••••••")
-                            : "••••••••••••"}
+                        {decryptionError ?? (showPassword && decryptedPassword !== null
+                            ? decryptedPassword
+                            : "••••••••••••")}
                     </p>
                 </div>
             </div>
@@ -227,6 +252,7 @@ export function VaultCard({ item }: { item: VaultItem }) {
                 variant={copied ? "default" : "secondary"}
                 className="w-full ring-2 ring-black/10 dark:ring-white/10 gap-2 cursor-copy hover:ring-black/20 dark:hover:ring-white/20"
                 onClick={copyToClipboard}
+                disabled={decryptedPassword === null}
                 aria-live="polite"
             >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
