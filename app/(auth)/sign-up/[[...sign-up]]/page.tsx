@@ -10,25 +10,26 @@ export default function Page() {
     const { resolvedTheme } = useTheme();
 
     return (
-        <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white dark:bg-zinc-950">
+        <div className="relative flex min-h-svh flex-col items-center justify-center overflow-x-clip px-4 py-8 sm:px-6 sm:py-12 bg-background">
             <div className="pointer-events-none absolute inset-0 dark:hidden bg-[linear-gradient(rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
             <div className="pointer-events-none absolute inset-0 hidden dark:block bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
             <div className="pointer-events-none absolute left-1/2 top-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-100/10 dark:bg-emerald-900/15 blur-[120px]" />
 
-            <div className="relative z-10 mb-8 flex flex-row gap-6 items-center">
-                <Link href="/">
+            <div className="relative z-10 mb-6 flex w-full max-w-sm flex-row justify-center gap-3 items-center sm:mb-8 sm:gap-6">
+                <Link href="/" className="shrink-0">
                     <Image
                         src="/0password-icon.png"
                         alt="0Password"
+                        className="h-11 w-11 sm:h-14 sm:w-14"
                         width={56}
                         height={56}
                     />
                 </Link>
                 <div className="flex flex-col gap-px">
-                    <h1 className="text-3xl font-semibold text-zinc-800 dark:text-zinc-100 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-semibold text-zinc-800 dark:text-zinc-100 tracking-tight">
                         0Password
                     </h1>
-                    <span className="text-zinc-500 dark:text-zinc-400">
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
                         Create your account
                     </span>
                 </div>
@@ -38,6 +39,10 @@ export default function Page() {
                 appearance={{
                     baseTheme: resolvedTheme === "dark" ? dark : undefined,
                     elements: {
+                        rootBox: "relative z-10 w-full max-w-sm",
+                        cardBox: "w-full max-w-full",
+                        card: "w-full px-5 py-6 sm:px-8 sm:py-8",
+                        formFieldInput: "text-base sm:text-sm",
                         headerTitle: "hidden",
                         headerSubtitle: "hidden",
                         header: "hidden",

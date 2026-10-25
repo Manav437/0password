@@ -13,7 +13,6 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
-    KeyRound,
     CreditCard,
     StickyNote,
     LockKeyhole,
@@ -28,7 +27,6 @@ import { clearMasterKey } from "@/lib/masterKey";
 
 const navItems = [
     { title: "All Items", icon: LayoutDashboard, url: "/dashboard", comingSoon: false },
-    { title: "Passwords", icon: KeyRound, url: "/dashboard/passwords", comingSoon: false },
     { title: "Payments", icon: CreditCard, url: "/dashboard/payments", comingSoon: true },
     { title: "Secure Notes", icon: StickyNote, url: "/dashboard/notes", comingSoon: true },
 ];

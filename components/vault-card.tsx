@@ -139,17 +139,17 @@ export function VaultCard({ item }: { item: VaultItem }) {
     };
 
     return (
-        <div className="p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-all group relative">
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
+        <div className="min-w-0 p-3 md:p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-all group relative">
+            <div className="flex items-center justify-between gap-2 mb-2 md:mb-3">
+                <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
                     <div
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted text-sm font-semibold"
                         aria-hidden="true"
                     >
                         {item.title.trim().slice(0, 2).toUpperCase() || "?"}
                     </div>
-                    <div className="flex flex-col">
-                        <h3 className="font-semibold truncate max-w-[120px]">
+                    <div className="flex min-w-0 flex-col">
+                        <h3 className="text-sm md:text-base font-semibold truncate md:max-w-[120px]">
                             {item.title}
                         </h3>
                         {websiteUrl && (
@@ -157,17 +157,17 @@ export function VaultCard({ item }: { item: VaultItem }) {
                                 href={websiteUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+                                className="text-[10px] text-muted-foreground hover:text-primary flex min-w-0 items-center gap-1 transition-colors"
                                 aria-label={`Visit ${item.title} website`}
                             >
-                                {websiteUrl.replace(/^https?:\/\//, "")}
-                                <ExternalLink size={10} />
+                                <span className="truncate">{websiteUrl.replace(/^https?:\/\//, "")}</span>
+                                <ExternalLink size={10} className="shrink-0" />
                             </a>
                         )}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                <div className="flex shrink-0 items-center gap-0 md:gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <Button
                         variant="ghost"
                         size="icon"
@@ -210,18 +210,18 @@ export function VaultCard({ item }: { item: VaultItem }) {
                 </div>
             </div>
 
-            <div className="space-y-1 mb-4">
+            <div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2 mb-1 md:block md:space-y-1 md:mb-4">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
                     Username
                 </p>
                 <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium truncate flex-1">
+                    <p className="min-w-0 text-sm font-medium truncate flex-1">
                         {item.login_id}
                     </p>
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-copy"
+                        className="h-8 w-8 md:h-6 md:w-6 shrink-0 cursor-copy"
                         onClick={copyUserToClipboard}
                         title="Copy Username"
                     >
@@ -234,30 +234,45 @@ export function VaultCard({ item }: { item: VaultItem }) {
                 </div>
             </div>
 
-            <div className="space-y-1 mb-4">
+            <div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2 md:block md:space-y-1 md:mb-4">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
                     Password
                 </p>
-                <div className="relative">
-                    <p className="text-sm font-sans bg-muted/50 p-2 rounded break-all min-h-[36px] flex items-center">
+                <div className="flex items-center justify-between gap-2">
+                    <p className="min-w-0 flex-1 text-sm font-sans bg-muted/50 px-2 py-1 md:p-2 rounded break-all min-h-8 md:min-h-[36px] flex items-center">
                         {decryptionError ?? (showPassword && decryptedPassword !== null
                             ? decryptedPassword
                             : "••••••••••••")}
                     </p>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 md:h-6 md:w-6 shrink-0 cursor-copy"
+                        onClick={copyToClipboard}
+                        disabled={decryptedPassword === null}
+                        title="Copy Password"
+                        aria-label={copied ? "Password copied" : "Copy password"}
+                    >
+                        {copied ? (
+                            <Check size={16} className="text-emerald-500" />
+                        ) : (
+                            <Copy size={16} className="group-hover:text-primary transition-colors" />
+                        )}
+                    </Button>
                 </div>
             </div>
 
-            <Button
+            {/*<Button
                 size="sm"
                 variant={copied ? "default" : "secondary"}
-                className="w-full ring-2 ring-black/10 dark:ring-white/10 gap-2 cursor-copy hover:ring-black/20 dark:hover:ring-white/20"
+                className="hidden md:inline-flex w-full ring-2 ring-black/10 dark:ring-white/10 gap-2 cursor-copy hover:ring-black/20 dark:hover:ring-white/20"
                 onClick={copyToClipboard}
                 disabled={decryptedPassword === null}
                 aria-live="polite"
             >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 {copied ? "Copied!" : "Copy Password"}
-            </Button>
+            </Button>*/}
         </div>
     );
 }

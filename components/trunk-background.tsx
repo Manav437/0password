@@ -1,68 +1,34 @@
-"use client";
-
-import { useEffect, useRef } from "react";
-import { useTheme } from "next-themes";
+// Static tree-ring contours keep the trunk motif without a client-side canvas.
+const contours = Array.from({ length: 32 }, (_, ring) => {
+    const radius = 5 + ring * 8;
+    const points = Array.from({ length: 121 }, (_, step) => {
+        const angle = (step / 120) * Math.PI * 2;
+        const ripple = (Math.sin(angle * 3 + ring * 0.12) * 9
+            + Math.cos(angle * 5 - ring * 0.08) * 5
+            + Math.sin(angle * 2 + ring * 0.15) * 12) * Math.min(radius / 80, 1);
+        const distance = radius + ripple;
+        const x = 300 + Math.cos(angle) * distance;
+        const y = 300 + Math.sin(angle) * distance;
+        return `${step === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
+    });
+    return `${points.join(" ")} Z`;
+});
 
 export default function TrunkBackground() {
-    const backgroundRef = useRef<HTMLDivElement>(null);
-    const { resolvedTheme } = useTheme();
-
-    useEffect(() => {
-        if (!resolvedTheme) return;
-
-        const isDark = resolvedTheme === "dark";
-        let effect: { destroy: () => void } | null = null;
-        let cancelled = false;
-
-        async function initVanta() {
-            try {
-                const p5Module = await import("p5");
-                const p5 = p5Module.default;
-
-                const { default: TRUNK } = await import(
-                    "vanta/dist/vanta.trunk.min"
-                );
-
-                if (cancelled || !backgroundRef.current) return;
-
-                // Vanta expects p5 to be available globally.
-                (window as unknown as { p5: typeof p5 }).p5 = p5;
-
-                effect = TRUNK({
-                    el: backgroundRef.current,
-                    p5,
-                    mouseControls: true,
-                    touchControls: true,
-                    gyroControls: false,
-                    minHeight: 200,
-                    minWidth: 200,
-                    scale: 1.2,
-                    scaleMobile: 1,
-                    backgroundColor: isDark ? 0x09090b : 0xffffff,
-                    color: isDark ? 0x818cf8 : 0x6366f1,
-                    spacing: 1.5,
-                    chaos: 1.2,
-                });
-            } catch (error) {
-                if (!cancelled) {
-                    console.error("Failed to initialize Vanta:", error);
-                }
-            }
-        }
-
-        void initVanta();
-
-        return () => {
-            cancelled = true;
-            effect?.destroy();
-        };
-    }, [resolvedTheme]);
-
     return (
-        <div
-            ref={backgroundRef}
-            aria-hidden="true"
-            className="pointer-events-none absolute -bottom-[200px] -right-[200px] z-0 h-[85vh] w-[50vw] bg-white dark:bg-zinc-950"
-        />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+            <svg
+                viewBox="0 0 600 600"
+                fill="none"
+                focusable="false"
+                className="absolute -bottom-32 -right-32 aspect-square w-[24rem] overflow-hidden rounded-full text-indigo-500 opacity-40 [mask-image:radial-gradient(circle,black_55%,transparent_71%)] dark:text-indigo-400 sm:-bottom-40 sm:-right-40 sm:w-[36rem] sm:opacity-70 lg:-bottom-[200px] lg:-right-[200px] lg:w-[max(50vw,36rem)] lg:opacity-100"
+            >
+                <g stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                    {contours.map((path, index) => (
+                        <path key={index} d={path} opacity={Math.min(0.2 + index * 0.12, 1)} />
+                    ))}
+                </g>
+            </svg>
+        </div>
     );
 }

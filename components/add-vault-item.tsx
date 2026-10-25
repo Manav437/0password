@@ -29,7 +29,7 @@ import { saveVaultItem } from "@/app/actions/vault";
 import { encrypt } from "@/lib/crypto";
 import { getMasterKey, getVaultId } from "@/lib/masterKey";
 
-export function AddItemDialog() {
+export function AddItemDialog({ iconOnly = false, className = "" }: { iconOnly?: boolean; className?: string }) {
     const [open, setOpen] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,9 +108,9 @@ export function AddItemDialog() {
             }}
         >
             <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 cursor-pointer">
+                <Button variant="outline" size={iconOnly ? "icon" : "default"} className={`gap-2 cursor-pointer ${className}`} aria-label="Add item">
                     <Plus className="h-4 w-4" />
-                    <span>New Item</span>
+                    {!iconOnly && <span>New Item</span>}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">

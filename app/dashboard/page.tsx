@@ -42,7 +42,7 @@ export default async function DashboardPage({
 
     return (
         <div className="p-6 space-y-8">
-            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div className="hidden md:flex md:flex-row justify-between md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">
                         Personal Vault
@@ -52,7 +52,7 @@ export default async function DashboardPage({
                     </p>
                 </div>
 
-                <AddItemDialog />
+                <AddItemDialog className="hidden md:inline-flex" />
             </div>
 
             <SearchInput />
@@ -103,7 +103,7 @@ export default async function DashboardPage({
                                 </Button>
                             ) : (
                                 <>
-                                    <AddItemDialog />
+                                    <AddItemDialog className="hidden md:inline-flex" />
                                     <Button
                                         variant="ghost"
                                         asChild
