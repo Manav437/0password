@@ -2,14 +2,24 @@ import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import TrunkBackground from "@/components/trunk-background";
-import { ChevronRight, ShieldCheck, LayoutDashboard } from "lucide-react";
+import { ChevronRight, ShieldCheck, LayoutDashboard, Github } from "lucide-react";
 
 export default async function Home() {
     const { userId } = await auth();
 
     return (
-        <div className="relative flex min-h-svh flex-col items-center justify-center overflow-x-clip px-5 py-10 sm:py-20 bg-background">
+        <div className="relative flex min-h-svh flex-col items-center justify-between overflow-x-clip px-5 py-10 sm:py-8 bg-background">
             <TrunkBackground />
+            <Link
+                href="https://github.com/Manav437/0password"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View 0Password on GitHub"
+                className="absolute right-5 top-5 z-10 inline-flex items-center justify-center rounded-md bg-zinc-100 p-2 text-muted-foreground transition-colors hover:bg-zinc-200 hover:text-foreground dark:bg-zinc-800 dark:hover:bg-zinc-700 sm:right-8 sm:top-8"
+            >
+                <Github className="size-5" aria-hidden="true" />
+                {/* <span>GitHub</span> */}
+            </Link>
 
             {/*<div className="pointer-events-none absolute inset-0 dark:hidden bg-[linear-gradient(rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
@@ -17,7 +27,7 @@ export default async function Home() {
 
             <div className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-100/10 dark:bg-emerald-900/15 blur-[120px]" />*/}
 
-            <div className="relative z-10 flex flex-col items-center w-full max-w-lg gap-7 text-center sm:gap-10">
+            <div className="relative z-10 flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-7 text-center sm:gap-8">
                 <div className="flex items-center gap-2 rounded-full border border-emerald-600/20 dark:border-white/50 bg-emerald-50 dark:bg-white/70 px-3 py-1.5">
                     <ShieldCheck className="text-black" size={18} />
                     <span className="text-xs text-black dark:text-black">
@@ -44,12 +54,8 @@ export default async function Home() {
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                    <span>AES-256-GCM</span>
-                    <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-600" />
-                    <span>PBKDF2</span>
-                    <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-600" />
-                    <span>Browser encryption</span>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Your master password can&apos;t be recovered.
                 </div>
 
                 <div className="flex w-full max-w-xs flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center">
@@ -83,7 +89,7 @@ export default async function Home() {
                 </div>
             </div>
 
-            <div className="relative z-10 mt-12 px-2 text-center sm:mt-16">
+            <div className="relative z-10 px-2 text-center">
                 <p className="font-serif text-xs text-zinc-500 dark:text-zinc-400 tracking-widest uppercase">
                     Open source · Your keys · your data
                 </p>

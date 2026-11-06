@@ -67,7 +67,6 @@ export function EditItemDialog({ item, decryptedPassword }: EditItemDialogProps)
             (n) => chars[n % chars.length],
         ).join("");
         form.setValue("password", generated, { shouldValidate: true });
-        toast.success("Strong password generated!");
     };
 
     async function onSubmit(data: VaultItemValues) {

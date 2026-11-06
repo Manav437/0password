@@ -20,7 +20,7 @@ export function DashboardHeaderTitle() {
     };
 
     return (
-        <h2 className="md:hidden text-sm font-medium text-muted-foreground animate-in fade-in slide-in-from-left-2 duration-300">
+        <h2 className="text-sm font-medium animate-in fade-in slide-in-from-left-2 duration-300">
             {getTitle()}
         </h2>
     );

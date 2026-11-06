@@ -21,7 +21,7 @@ export function SearchInput() {
     }, 300);
 
     return (
-        <div className="relative w-full lg:max-w-md">
+        <div className="relative w-full min-w-0 lg:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
                 placeholder="Search your vault..."

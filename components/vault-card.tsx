@@ -20,7 +20,7 @@ type VaultItem = {
     website_url?: string;
 };
 
-export function VaultCard({ item }: { item: VaultItem }) {
+export function VaultCard({ item, layout = "grid" }: { item: VaultItem; layout?: "grid" | "list" }) {
     const [showPassword, setShowPassword] = useState(false);
     const [copied, setCopied] = useState(false);
     const [copiedUser, setCopiedUser] = useState(false);
@@ -139,8 +139,11 @@ export function VaultCard({ item }: { item: VaultItem }) {
     };
 
     return (
-        <div className="min-w-0 p-3 md:p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-all group relative">
-            <div className="flex items-center justify-between gap-2 mb-2 md:mb-3">
+        <div className={cn(
+            "group relative min-w-0 rounded-xl border bg-card p-3 shadow-sm transition-all hover:shadow-md md:p-4",
+            layout === "list" && "md:grid md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:gap-4",
+        )}>
+            <div className={cn("mb-2 flex items-center justify-between gap-2 md:mb-3", layout === "list" && "md:mb-0")}>
                 <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
                     <div
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted text-sm font-semibold"
@@ -149,7 +152,7 @@ export function VaultCard({ item }: { item: VaultItem }) {
                         {item.title.trim().slice(0, 2).toUpperCase() || "?"}
                     </div>
                     <div className="flex min-w-0 flex-col">
-                        <h3 className="text-sm md:text-base font-semibold truncate md:max-w-[120px]">
+                        <h3 className={cn("truncate text-sm font-semibold md:text-base", layout === "grid" && "md:max-w-[120px]")}>
                             {item.title}
                         </h3>
                         {websiteUrl && (
@@ -184,7 +187,7 @@ export function VaultCard({ item }: { item: VaultItem }) {
                     >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </Button>
-                    <EditItemDialog
+                        <EditItemDialog
                         item={item}
                         decryptedPassword={decryptedPassword}
                     />
@@ -210,7 +213,7 @@ export function VaultCard({ item }: { item: VaultItem }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2 mb-1 md:block md:space-y-1 md:mb-4">
+            <div className={cn("mb-1 grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2 md:mb-4 md:block md:space-y-1", layout === "list" && "md:mb-0")}>
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
                     Username
                 </p>
@@ -234,7 +237,7 @@ export function VaultCard({ item }: { item: VaultItem }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2 md:block md:space-y-1 md:mb-4">
+            <div className={cn("grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2 md:mb-4 md:block md:space-y-1", layout === "list" && "md:mb-0")}>
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
                     Password
                 </p>

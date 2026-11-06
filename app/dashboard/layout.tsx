@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import { VaultWrapper } from "@/components/vault-wrapper";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { DashboardHeaderTitle } from "@/components/dashboard-header-title";
-import { AddItemDialog } from "@/components/add-vault-item";
 
 export default async function DashboardLayout({
     children,
@@ -29,12 +28,11 @@ export default async function DashboardLayout({
             >
                 <AppSidebar />
                 <div className="flex flex-col flex-1 overflow-hidden bg-background">
-                    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background/80 backdrop-blur px-4">
-                        <SidebarTrigger className="-ml-1" />
+                    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border bg-background/80 backdrop-blur px-4">
+                        <SidebarTrigger className="size-9" />
                         <div className="h-4 w-px bg-border mx-2" />
                         <DashboardHeaderTitle />
                         <div className="ml-auto flex items-center gap-2">
-                            <AddItemDialog iconOnly className="md:hidden" />
                             <ThemeToggle />
                         </div>
                     </header>

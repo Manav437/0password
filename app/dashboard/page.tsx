@@ -1,15 +1,11 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { normalizeVaultSearchQuery } from "@/lib/vault-search";
 import { storedCredentialSchema } from "@/lib/vault-protocol";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
-import { SearchInput } from "@/components/vault-search-input";
-import { AddItemDialog } from "../../components/add-vault-item";
-import { VaultCard } from "@/components/vault-card";
-import { ChevronRight, ShieldOff, SearchX, ShieldCheck } from "lucide-react";
+import { VaultCollection } from "@/components/vault-collection";
+import { LayoutDashboard, FileExclamationPoint } from "lucide-react";
 
 export default async function DashboardPage({
     searchParams,
@@ -38,95 +34,53 @@ export default async function DashboardPage({
     const parsed = z.array(storedCredentialSchema).safeParse(data);
     if (!parsed.success) throw new Error("The vault returned invalid data. Please try again.");
     const vaultItems = parsed.data;
-    const isEmpty = vaultItems.length === 0;
+    const emptyState = (
+        <div className="flex min-h-[min(60vh,34rem)] flex-1 items-center justify-center rounded-md border border-dotted border-zinc-200 bg-white/50 px-5 py-8 transition-colors dark:border-zinc-700 dark:bg-white/[0.02] sm:px-10">
+            <div className="flex max-w-md items-start gap-4 text-left">
+                <div className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-md ring-1 ${query ? "bg-muted ring-border" : "bg-emerald-500/10 ring-emerald-500/15"}`}>
+                    {query ? (
+                        <FileExclamationPoint className="h-6 w-6 text-zinc-400" />
+                    ) : (
+                        <LayoutDashboard className="h-6 w-6 text-emerald-600 dark:text-emerald-500" />
+                    )}
 
-    return (
-        <div className="p-6 space-y-8">
-            <div className="hidden md:flex md:flex-row justify-between md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">
-                        Personal Vault
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Securely manage your digital credentials.
-                    </p>
+                    {/*  */}
                 </div>
 
-                <AddItemDialog className="hidden md:inline-flex" />
-            </div>
+                <div className="min-w-0">
+                    <h3 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                        {query ? "No passwords found" : "Your vault is empty"}
+                    </h3>
 
-            <SearchInput />
+                    <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                        {query ? (
+                            <>
+                                No match for{" "}
+                                <span className="font-medium text-zinc-900 dark:text-zinc-200">
+                                    &ldquo;{query}&rdquo;
+                                </span>
+                                .
+                            </>
+                        ) : (
+                            "Add your first login from New Item."
+                        )}
+                    </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {isEmpty ? (
-                    <div className="col-span-full flex flex-col items-center justify-center rounded-[.5rem] border border-dashed border-zinc-200 bg-zinc-50/30 py-24 transition-all dark:border-zinc-800 dark:bg-white/[0.02]">
-                        <div className="relative mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-                            {query ? (
-                                <SearchX className="h-10 w-10 text-zinc-400" />
-                            ) : (
-                                <ShieldOff className="h-10 w-10 text-emerald-600 dark:text-emerald-500" />
-                            )}
-
-                            {!query && (
-                                <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 border-[3px] border-white dark:border-zinc-950">
-                                    <ShieldCheck size={10} className="text-white" strokeWidth={3} />
-                                </div>
-                            )}
+                    {/* {query && (
+                        <div className="mt-3">
+                            <Button variant="outline" asChild className="cursor-pointer">
+                                <Link href="/dashboard">Reset search</Link>
+                            </Button>
                         </div>
-
-                        <h3 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                            {query ? "No results found" : "Your vault is empty"}
-                        </h3>
-
-                        <p className="mt-2 max-w-[300px] text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                            {query ? (
-                                <>
-                                    We couldn&apos;t find anything for{" "}
-                                    <span className="font-medium text-zinc-900 dark:text-zinc-200">
-                                        &ldquo;{query}&rdquo;
-                                    </span>
-                                    . Try a different keyword.
-                                </>
-                            ) : (
-                                "Store your passwords, recovery keys, and sensitive notes in your encrypted vault."
-                            )}
-                        </p>
-
-                        <div className="mt-8 flex items-center gap-4">
-                            {query ? (
-                                <Button
-                                    variant="outline"
-                                    asChild
-                                    className="rounded-full px-8 shadow-sm cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                                >
-                                    <Link href="/dashboard">Reset Search</Link>
-                                </Button>
-                            ) : (
-                                <>
-                                    <AddItemDialog className="hidden md:inline-flex" />
-                                    <Button
-                                        variant="ghost"
-                                        asChild
-                                        className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer text-xs"
-                                    >
-                                        <Link
-                                            href="https://en.wikipedia.org/wiki/Encryption"
-                                            target="_blank"
-                                            className="flex items-center gap-2"
-                                        >
-                                            Security Protocol <ChevronRight size={12} className="opacity-50" />
-                                        </Link>
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                ) : (
-                    vaultItems.map((item) => (
-                        <VaultCard key={item.id} item={item} />
-                    ))
-                )}
+                    )} */}
+                </div>
             </div>
+        </div>
+    );
+
+    return (
+        <div className="flex min-h-full flex-col gap-8 p-6">
+            <VaultCollection items={vaultItems} emptyState={emptyState} />
         </div>
     );
 }
